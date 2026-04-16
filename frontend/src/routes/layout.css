@@ -1,0 +1,16 @@
+@import 'tailwindcss';
+
+* {
+	box-sizing: border-box;
+	margin: 0px;
+	--floral-white: #fffcf2;
+	--silver: #ccc5b9;
+	--charcoal-brown: #403d39;
+	--carbon-black: #252422;
+	--spicy-paprika: #eb5e28;
+}
+
+body {
+	background-color: var(--carbon-black);
+	color: var(--floral-white);
+}

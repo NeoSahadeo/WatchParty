@@ -1,0 +1,10 @@
+[project]
+name = "WatchParty"
+version = "0.1.0"
+description = "WatchParty backend"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "argon2-cffi>=25.1.0",
+    "fastapi[standard]>=0.135.3",
+]
