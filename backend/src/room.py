@@ -24,15 +24,17 @@ class Room:
     timestamp: float
     timestamps: list[float]
     paused: bool
+    src: str
     hash: str
     hasher: PasswordHasher
 
     def __init__(self, room_id: str, hash: str, hasher: PasswordHasher):
         self.id = room_id
         self.connections = {}
-        self.timestamp = 0
+        self.timestamp = 0.0
         self.timestamps = []
         self.paused = True
+        self.src = ""
         self.hash = hash
         self.hasher = hasher
 

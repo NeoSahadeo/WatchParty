@@ -1,3 +1,4 @@
+import os
 from doctest import debug
 from fastapi.responses import JSONResponse
 from typing import Annotated
@@ -10,7 +11,12 @@ from src.models import Connection, ConnectionForm
 from src.room import RoomController, Room
 from src.db import Database
 
+PORT = 8000
+
 rooms = RoomController()
+
+base_dir = "/home/neosahadeo/Videos"
+video_files = {}
 
 
 @asynccontextmanager
@@ -18,6 +24,14 @@ async def lifespan(app: FastAPI):
     db = Database()
     for x in db.fetchall():
         rooms._create_room(x[0], x[1])
+
+    for root, dirs, files in os.walk(base_dir):
+        dirs.sort()
+        files.sort()
+        for f in files:
+            for exten in [".mp4", ".mk4"]:
+                if exten in f:
+                    video_files[f] = os.path.relpath(os.path.join(root, f), base_dir)
     yield
 
 
@@ -62,43 +76,72 @@ def sync():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    client_host = websocket.url.hostname
+
+    data = await websocket.receive_text()
+    obj = json.loads(data)
+    client_id = obj.get("client_id")
+    room_id = obj.get("room_id")
+
+    if not client_id or not room_id:
+        await websocket.close()
+        return None
+
+    if not rooms.query_room(room_id, client_id):
+        await websocket.close()
+        return None
+
+    r = rooms.rooms[room_id]
+    dummy = {"timestamp": r.timestamp, "paused": r.paused, "src": r.src}
+
     try:
-        data = await websocket.receive_text()
-        obj = json.loads(data)
-        client_id = obj.get("client_id")
-        room_id = obj.get("room_id")
-        if not client_id or not room_id:
-            await websocket.close()
-            return None
-        if not rooms.query_room(room_id, client_id):
-            await websocket.close()
-            return None
-
-        dummy = {
-            "src": "http://10.10.10.172:8000/video/Movies/Into.the.Wild.2007.1080p.BluRay.x264.YIFY.mp4",
-            "timestamp": 0.0,
-            "paused": True,
-        }
-        r = rooms.rooms[room_id]
-
         while True:
             data = await websocket.receive_text()
             obj = json.loads(data)
-            timestamp = obj.get("timestamp")
-            leader = obj.get("leader")
-            paused = obj.get("paused")
-            if leader:
-                r.timestamp = timestamp
-                r.paused = paused
+            req_type = obj.get("type")
+            if req_type == "sync":
+                timestamp = obj.get("timestamp")
+                leader = obj.get("leader")
 
-            dummy["timestamp"] = r.timestamp
-            dummy["paused"] = r.paused
+                if leader:
+                    r.timestamp = timestamp
 
-            await websocket.send_text(json.dumps(dummy))
+                dummy["timestamp"] = r.timestamp
+                dummy["paused"] = r.paused
+                dummy["src"] = r.src
+
+                await websocket.send_text(json.dumps(dummy))
+            elif req_type == "command":
+                command = obj.get("command")
+                print("command received:", command)
+                match (command):
+                    case "pause":
+                        r.paused = True
+
+                    case "play":
+                        r.paused = False
+
+                    case "request src":
+                        await websocket.send_text(
+                            json.dumps(
+                                {
+                                    "src": f"http://{client_host}:{PORT}/video/{r.src}",
+                                }
+                            )
+                        )
+                    case "request video files":
+                        await websocket.send_text(
+                            json.dumps({"video_files": list(video_files.keys())})
+                        )
+                    case "load video":
+                        data = obj.get("data")
+                        r.src = (
+                            f"http://{client_host}:{PORT}/video/{video_files.get(data)}"
+                        )
+
     except WebSocketDisconnect:
         rooms._disconnect(client_id, room_id)
 
 
 if __name__ == "__main__":
-    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
-    print("stuff")
+    uvicorn.run("src.main:app", host="0.0.0.0", port=PORT, reload=True)

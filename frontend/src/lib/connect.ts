@@ -14,6 +14,7 @@ export async function connect(
 	form.set('client_id', user_id);
 
 	try {
+		console.log('connection')
 		const res = await fetch(`${server}/connect`, {
 			method: 'POST',
 			body: form
