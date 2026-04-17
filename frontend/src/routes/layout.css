@@ -1,8 +1,13 @@
 @import 'tailwindcss';
 
+@plugin "daisyui" {
+	themes:
+		dark --default,
+		watchparty;
+}
+
 * {
 	box-sizing: border-box;
-	margin: 0px;
 	--floral-white: #fffcf2;
 	--silver: #ccc5b9;
 	--charcoal-brown: #403d39;
@@ -11,6 +16,42 @@
 }
 
 body {
+	margin: 0px;
 	background-color: var(--carbon-black);
 	color: var(--floral-white);
+}
+
+@plugin "daisyui/theme" {
+	name: 'watchparty';
+	default: true;
+	prefersdark: true;
+	color-scheme: 'dark';
+	--color-base-100: #403d39;
+	--color-base-200: #252422;
+	--color-base-300: #ccc5b9;
+	--color-base-content: oklch(83.768% 0.001 17.911);
+	--color-primary: #eb5e28;
+	--color-primary-content: oklch(0% 0 0);
+	--color-secondary: oklch(75% 0.183 55.934);
+	--color-secondary-content: oklch(13.955% 0.027 168.327);
+	--color-accent: oklch(70% 0.213 47.604);
+	--color-accent-content: oklch(14.125% 0.023 185.713);
+	--color-neutral: oklch(37% 0 0);
+	--color-neutral-content: oklch(86.139% 0.007 171.364);
+	--color-info: oklch(68% 0.162 75.834);
+	--color-info-content: oklch(0% 0 0);
+	--color-success: oklch(64.8% 0.15 160);
+	--color-success-content: oklch(0% 0 0);
+	--color-warning: oklch(84.71% 0.199 83.87);
+	--color-warning-content: oklch(0% 0 0);
+	--color-error: oklch(71.76% 0.221 22.18);
+	--color-error-content: oklch(0% 0 0);
+	--radius-selector: 1rem;
+	--radius-field: 2rem;
+	--radius-box: 1rem;
+	--size-selector: 0.1875rem;
+	--size-field: 0.25rem;
+	--border: 0.5px;
+	--depth: 0;
+	--noise: 0;
 }
