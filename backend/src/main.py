@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
         dirs.sort()
         files.sort()
         for f in files:
-            for exten in [".mp4", ".mk4"]:
+            for exten in [".mp4", ".mkv", ".mp3"]:
                 if exten in f:
                     video_files[f] = os.path.relpath(os.path.join(root, f), base_dir)
     yield
@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.mount("/video", StaticFiles(directory="/home/neosahadeo/Videos"), name="video")
+app.mount("/video", StaticFiles(directory=base_dir), name="video")
 
 
 @app.post("/connect")
@@ -113,7 +113,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_text(json.dumps(dummy))
             elif req_type == "command":
                 command = obj.get("command")
-                print("command received:", command)
+                # print("command received:", command)
                 match (command):
                     case "pause":
                         r.paused = True
