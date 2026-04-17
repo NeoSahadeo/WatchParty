@@ -76,7 +76,14 @@ def sync():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    client_host = websocket.url.hostname
+    # print(websocket.client.host)
+
+    # client_host = None
+    # if websocket.client:
+    #     if websocket.client.host.startswith(".".join(local_ip.split(".")[:-1])):
+    #         client_host = local_ip
+    #     else:
+    #         client_host = external_ip
 
     data = await websocket.receive_text()
     obj = json.loads(data)
@@ -113,7 +120,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_text(json.dumps(dummy))
             elif req_type == "command":
                 command = obj.get("command")
-                # print("command received:", command)
+                print("command received:", command)
                 match (command):
                     case "pause":
                         r.paused = True
@@ -125,7 +132,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         await websocket.send_text(
                             json.dumps(
                                 {
-                                    "src": f"http://{client_host}:{PORT}/video/{r.src}",
+                                    "src": f"/video/{r.src}",
                                 }
                             )
                         )
@@ -135,9 +142,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         )
                     case "load video":
                         data = obj.get("data")
-                        r.src = (
-                            f"http://{client_host}:{PORT}/video/{video_files.get(data)}"
-                        )
+                        r.src = f"/video/{video_files.get(data)}"
 
     except WebSocketDisconnect:
         rooms._disconnect(client_id, room_id)
