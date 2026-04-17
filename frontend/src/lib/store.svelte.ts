@@ -1,13 +1,16 @@
-export const server = $state('http://10.10.10.172:8000');
-// export const socket = $state('ws://10.10.10.172:8000');
+import { PUBLIC_IP, PUBLIC_LOCAL_IP } from '$env/static/public';
+
+export const server = $state(`http://${PUBLIC_LOCAL_IP}:8000`);
+
 export const socket = $state(() => {
 	// If on same network as server (10.10.10.x), use internal
 	if (
 		window.location.hostname === 'localhost' ||
-		window.location.hostname.startsWith('10.10.10.')
+		window.location.hostname.startsWith(PUBLIC_LOCAL_IP.split('.').slice(0, -1).join('.'))
 	) {
-		return 'ws://10.10.10.172:8000';
+		return `ws://${PUBLIC_LOCAL_IP}:8000`;
 	}
+	console.log(window.location.hostname);
 	// External: use public IP/domain + external port
-	return 'ws://196.216.137.220:8000'; // Or your domain
+	return `ws://${PUBLIC_IP}:8000`;
 });

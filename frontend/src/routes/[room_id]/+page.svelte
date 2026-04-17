@@ -4,7 +4,6 @@
 	import { socket } from '$lib/store.svelte.js';
 	import { onMount } from 'svelte';
 	import type { PageProps } from './$types';
-	import { command } from '$app/server';
 
 	let { data, form, params }: PageProps = $props();
 	let pingInterval = $state(-1);
@@ -21,7 +20,7 @@
 	let slug = $state(data.room_id || params.room_id);
 	let videoElement = $state<HTMLVideoElement>();
 	let video = $state({
-		src: undefined,
+		src: '',
 		timestamp: 0,
 		leader: false,
 		paused: true
@@ -65,7 +64,7 @@
 				const data = JSON.parse(e.data);
 
 				if (data.src && data.src != video.src) {
-					video.src = data.src;
+					video.src = `http://${window.location.hostname}:8000${data.src}`;
 				}
 
 				if (Math.abs(video.timestamp - data.timestamp) > 3) {
