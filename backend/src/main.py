@@ -132,7 +132,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         await websocket.send_text(
                             json.dumps(
                                 {
-                                    "src": f"/video/{r.src}",
+                                    "src": r.src,
                                 }
                             )
                         )

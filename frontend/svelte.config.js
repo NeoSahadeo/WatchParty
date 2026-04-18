@@ -1,4 +1,7 @@
 import adapter from '@sveltejs/adapter-node';
+import { config as dotenvConfig } from 'dotenv';
+
+dotenvConfig();
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
