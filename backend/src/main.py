@@ -2,6 +2,8 @@ import os
 from doctest import debug
 from fastapi.responses import JSONResponse
 from typing import Annotated
+from pathlib import Path
+import asyncio
 import json
 import uvicorn
 from fastapi import FastAPI, Form, Response, WebSocket, WebSocketDisconnect, Request
@@ -15,8 +17,23 @@ PORT = 8000
 
 rooms = RoomController()
 
-base_dir = "/home/neosahadeo/Videos"
+base_dir = Path("/home/neosahadeo/Videos")
 video_files = {}
+
+
+async def scan_dir_async(path: Path) -> None:
+    tasks = []
+    for child in path.iterdir():
+        if child.is_file():
+            f = child.name
+            for exten in [".mp4", ".mkv", ".mp3"]:
+                if exten in f:
+                    video_files[f] = str(child.relative_to(base_dir))
+        elif child.is_dir():
+            tasks.append(asyncio.create_task(scan_dir_async(child)))
+
+    if tasks:
+        await asyncio.gather(*tasks, return_exceptions=True)
 
 
 @asynccontextmanager
@@ -24,14 +41,6 @@ async def lifespan(app: FastAPI):
     db = Database()
     for x in db.fetchall():
         rooms._create_room(x[0], x[1])
-
-    for root, dirs, files in os.walk(base_dir):
-        dirs.sort()
-        files.sort()
-        for f in files:
-            for exten in [".mp4", ".mkv", ".mp3"]:
-                if exten in f:
-                    video_files[f] = os.path.relpath(os.path.join(root, f), base_dir)
     yield
 
 
@@ -137,6 +146,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             )
                         )
                     case "request video files":
+                        await scan_dir_async(base_dir)
                         await websocket.send_text(
                             json.dumps({"video_files": list(video_files.keys())})
                         )
