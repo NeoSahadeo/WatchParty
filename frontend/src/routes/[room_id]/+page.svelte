@@ -9,8 +9,12 @@
 	let pingInterval = $state(-1);
 
 	let videosModal = $state<HTMLDialogElement>();
-	let videoFiles = $state([]);
-	let videoRequest = $state(false);
+	let videoFiles = $state({
+		files: [],
+		display: []
+	});
+	let videoFilesRequest = $state(false);
+	let videoFilesSearch = $state('');
 
 	let leaderModal = $state<HTMLDialogElement>();
 	let videoLoaded = $state(true);
@@ -36,6 +40,12 @@
 		} else {
 			document.body.style.overflow = '';
 		}
+	});
+
+	$effect(() => {
+		videoFiles.display = videoFiles.files.filter((e: string) =>
+			e.toLowerCase().includes(videoFilesSearch.toLowerCase())
+		);
 	});
 
 	class Socket {
@@ -78,8 +88,9 @@
 				}
 
 				if (data.video_files) {
-					videoFiles = data.video_files;
-					videoRequest = false;
+					videoFiles.files = data.video_files;
+					videoFiles.display = data.video_files;
+					videoFilesRequest = false;
 				}
 			});
 
@@ -187,7 +198,7 @@
 <dialog bind:this={videosModal} class="modal">
 	<div class="modal-box relative">
 		<h3 class="text-lg font-bold">Available videos:</h3>
-		{#if videoRequest}
+		{#if videoFilesRequest}
 			<div class="ml-auto mr-auto mt-8 w-fit">
 				<span class="loading loading-ring loading-xl"></span>
 				<span class="loading loading-ring loading-xl"></span>
@@ -195,26 +206,42 @@
 				<span class="loading loading-ring loading-xl"></span>
 				<span class="loading loading-ring loading-xl"></span>
 			</div>
+		{:else}
+			<label class="input mt-4">
+				<svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+					<g
+						stroke-linejoin="round"
+						stroke-linecap="round"
+						stroke-width="2.5"
+						fill="none"
+						stroke="currentColor"
+					>
+						<circle cx="11" cy="11" r="8"></circle>
+						<path d="m21 21-4.3-4.3"></path>
+					</g>
+				</svg>
+				<input bind:value={videoFilesSearch} type="search" placeholder="Search" />
+			</label>
+			<div class="flex flex-col gap-2 px-3 pt-3 max-h-50 overflow-scroll mb-10">
+				{#each videoFiles.display as file}
+					<button
+						onclick={() => {
+							socket_instance?.send(
+								JSON.stringify({
+									type: 'command',
+									command: 'load video',
+									data: file,
+									client_id: data.user_id!,
+									room_id: data.room_id
+								})
+							);
+						}}
+						class="min-h-10 max-w-10 bg-base-200 rounded-full hover:bg-primary hover:cursor-pointer max-w-xs overflow-ellipsis px-3 overflow-hidden truncate text-left"
+						>{file}</button
+					>
+				{/each}
+			</div>
 		{/if}
-		<div class="flex flex-col gap-2 px-3 pt-3 mt-4 max-h-50 overflow-scroll mb-10">
-			{#each videoFiles as file, index}
-				<button
-					onclick={() => {
-						socket_instance?.send(
-							JSON.stringify({
-								type: 'command',
-								command: 'load video',
-								data: file,
-								client_id: data.user_id!,
-								room_id: data.room_id
-							})
-						);
-					}}
-					class="min-h-10 max-w-10 bg-base-200 rounded-full hover:bg-primary hover:cursor-pointer max-w-xs overflow-ellipsis px-3 overflow-hidden truncate text-left"
-					>{file}</button
-				>
-			{/each}
-		</div>
 		<div class="modal-action pb-4 pr-4 fixed right-0 bottom-0">
 			<form method="dialog">
 				<button class="btn">Close</button>
@@ -329,7 +356,7 @@
 						onclick={(e) => {
 							e.preventDefault();
 							e.stopImmediatePropagation();
-							leaderModal.showModal();
+							leaderModal!.showModal();
 						}}
 						bind:checked={video.leader}
 						class="toggle toggle-xl toggle-primary"
@@ -338,8 +365,8 @@
 				<div>
 					<button
 						onclick={() => {
-							videosModal.showModal();
-							videoRequest = true;
+							videosModal!.showModal();
+							videoFilesRequest = true;
 							socket_instance?.send(
 								JSON.stringify({
 									type: 'command',
